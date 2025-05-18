@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AP Physics C Collisions Lab</title>
+  <script src="p5.min.js"></script> <!-- Updated to use a local version of p5.js -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap">
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      font-family: 'Roboto', sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+      overflow: hidden;
+    }
+    #controls {
+      width: 300px;
+      padding: 20px;
+      background: #1e1e1e;
+      border-right: 1px solid #333;
+      overflow-y: auto;
+      height: 100vh;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+    }
+    #canvas-container {
+      flex: 1;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    .control-group {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #333;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      color: #e0e0e0;
+      font-weight: 300;
+    }
+    button {
+      padding: 10px 14px;
+      margin-right: 8px;
+      margin-top: 10px;
+      background-color: #3a3a3a;
+      color: #e0e0e0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+    button:hover {
+      background-color: #4f4f4f;
+      transform: translateY(-2px);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .primary-btn {
+      background-color: #5c6bc0;
+    }
+    .primary-btn:hover {
+      background-color: #7986cb;
+    }
+    .danger-btn {
+      background-color: #f44336;
+    }
+    .danger-btn:hover {
+      background-color: #ef5350;
+    }
+    .info {
+      font-size: 14px;
+      color: #b0b0b0;
+      background-color: #252525;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    input[type="number"] {
+      width: 80px;
+      background-color: #333;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      padding: 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+      font-family: 'Roboto', sans-serif;
+    }
+    input[type="range"] {
+      width: 100%;
+      margin-top: 8px;
+      background-color: #333;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 3px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #03dac6;
+      cursor: pointer;
+    }
+    h3 {
+      margin-top: 20px;
+      margin-bottom: 12px;
+      color: #bb86fc;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    #systemData {
+      margin-top: 15px;
+      line-height: 1.5;
+    }
+    .parameter-input {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .parameter-input label {
+      margin-top: 0;
+    }
+    .app-title {
+      color: #bb86fc;
+      font-size: 24px;
+      font-weight: 500;
+      margin-top: 0;
+      margin-bottom: 20px;
+      text-align: center;
+      letter-spacing: 1px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #333;
+    }
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 34px;
+      height: 20px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 20px;
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #03dac6;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(14px);
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <h1 class="app-title">Collision Simulator</h1>
+
+    <div class="control-group">
+      <h3>Particle Controls</h3>
+      <button id="addParticle" class="primary-btn">Add Particle</button>
+      <button id="removeParticle" class="danger-btn">Remove Selected</button>
+
+      <div id="particleProps">
+        <div class="parameter-input">
+          <label for="mass">Mass (kg):</label>
+          <input id="mass" type="number" step="0.1" min="0.1" value="1.0">
+        </div>
+        <div class="parameter-input">
+          <label for="speed">Speed (m/s):</label>
+          <input id="speed" type="number" step="1" min="0" value="50">
+        </div>
+        <div class="parameter-input">
+          <label for="angle">Angle (°):</label>
+          <input id="angle" type="number" step="1" value="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3>Collision Settings</h3>
+      <label for="ePart">Particle Elasticity</label>
+      <input id="ePart" type="range" min="0" max="100" step="10" value="100">
+      <span id="ePartValue">100%</span>
+
+      <label for="eWall">Wall Elasticity</label>
+      <input id="eWall" type="range" min="0" max="100" step="10" value="100">
+      <span id="eWallValue">100%</span>
+    </div>
+
+    <div class="control-group">
+      <h3>Simulation</h3>
+      <button id="resetSim" class="primary-btn">Reset Simulation</button>
+      <button id="pauseSim">Play</button>
+    </div>
+
+    <div class="control-group">
+      <h3>System Data</h3>
+      <div id="systemData" class="info"></div>
+    </div>
+  </div>
+  <div id="canvas-container"></div>
+  <script src="sketch.js"></script>
+</body>
+</html>
+
