@@ -326,19 +326,34 @@ function checkCollision(particleA, particleB, elasticity) {
   // If particles are moving away from each other, no collision response needed
   if (normalVelocity > 0) return false;
 
-  // Calculate restitution (coefficient of elasticity)
-  const e = elasticity;
+  // For perfectly inelastic collision (0% elasticity), particles stick together
+  if (elasticity === 0) {
+    // Calculate combined velocity based on conservation of momentum
+    const totalMass = particleA.mass + particleB.mass;
+    const combinedVelocity = p5.Vector.add(
+      p5.Vector.mult(particleA.velocity, particleA.mass),
+      p5.Vector.mult(particleB.velocity, particleB.mass)
+    ).div(totalMass);
 
-  // Calculate impulse scalar
-  // j = -(1 + e) * normalVelocity / (1/m1 + 1/m2)
-  const j = -(1 + e) * normalVelocity / (particleA.inverseMass + particleB.inverseMass);
+    // Set both particles to move at the same velocity
+    particleA.velocity = combinedVelocity.copy();
+    particleB.velocity = combinedVelocity.copy();
+  } else {
+    // For elastic or partially elastic collisions, use standard impulse calculation
+    // Calculate restitution (coefficient of elasticity)
+    const e = elasticity;
 
-  // Calculate impulse vector
-  const impulse = p5.Vector.mult(collisionNormal, j);
+    // Calculate impulse scalar
+    // j = -(1 + e) * normalVelocity / (1/m1 + 1/m2)
+    const j = -(1 + e) * normalVelocity / (particleA.inverseMass + particleB.inverseMass);
 
-  // Apply impulse to change velocities
-  particleA.velocity.sub(p5.Vector.mult(impulse, particleA.inverseMass));
-  particleB.velocity.add(p5.Vector.mult(impulse, particleB.inverseMass));
+    // Calculate impulse vector
+    const impulse = p5.Vector.mult(collisionNormal, j);
+
+    // Apply impulse to change velocities
+    particleA.velocity.sub(p5.Vector.mult(impulse, particleA.inverseMass));
+    particleB.velocity.add(p5.Vector.mult(impulse, particleB.inverseMass));
+  }
 
   // Position correction to prevent overlap (Constraint based)
   const correction = (minDistance - distance) * POSITION_CORRECTION_FACTOR;
