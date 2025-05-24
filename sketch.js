@@ -11,6 +11,7 @@ let showLabels = false; // Toggle for displaying particle property labels - defa
 let particleElasticity = 1.0; // Coefficient of restitution for particle-particle collisions - default to 100%
 let wallElasticity = 1.0; // Coefficient of restitution for wall collisions - default to 100%
 let dragVelocityHandle = false; // Flag for dragging velocity vector
+let dragParticlePosition = false; // Flag for dragging particle position
 
 // Physics constants
 const POSITION_CORRECTION_FACTOR = 0.2; // How much to correct position overlaps (0-1)
@@ -368,11 +369,13 @@ function checkCollision(particleA, particleB, elasticity) {
 }
 
 function mousePressed() {
+  if (!paused) return;  // only allow selection when paused
   // Only handle selection if clicked on the canvas, not on UI controls
   if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
     // Check if we clicked on a particle
     selectedParticle = null;
     dragVelocityHandle = false;
+    dragParticlePosition = false;
 
     for (let p of particles) {
       // Check if clicked on velocity handle
@@ -384,6 +387,7 @@ function mousePressed() {
 
       // Check if clicked on particle body
       if (p.contains(mouseX, mouseY)) {
+        dragParticlePosition = true;
         selectedParticle = p;
         break;
       }
@@ -395,16 +399,24 @@ function mousePressed() {
 }
 
 function mouseDragged() {
+  if (!paused) return;  // only allow dragging when paused
   if (selectedParticle && dragVelocityHandle) {
     // Dragging velocity vector
     selectedParticle.setVelocityFromDrag(mouseX, mouseY);
     updateParticlePropertiesUI();
     return false; // Prevent default
+  } else if (selectedParticle && dragParticlePosition) {
+    // Dragging particle position
+    selectedParticle.position.x = mouseX;
+    selectedParticle.position.y = mouseY;
+    updateParticlePropertiesUI();
+    return false;
   }
 }
 
 function mouseReleased() {
   dragVelocityHandle = false;
+  dragParticlePosition = false;
 }
 
 function updateParticlePropertiesUI() {
@@ -526,7 +538,13 @@ class Particle {
 
     // Display velocity value near the vector handle
     textAlign(CENTER, CENTER);
-    fill(255, 255, 0);
+    // Determine contrasting text color against background and particle
+    const tr = red(this.color), tg = green(this.color), tb = blue(this.color);
+    const lumP = 0.299 * tr + 0.587 * tg + 0.114 * tb;
+    const lumBg = 18; // same as canvas background
+    const contrastWhite = min(abs(255 - lumBg), abs(255 - lumP));
+    const contrastBlack = min(abs(0 - lumBg), abs(0 - lumP));
+    fill(contrastWhite > contrastBlack ? 255 : 0);
     textSize(12);
     text(`${this.getSpeed().toFixed(1)} m/s`, velEnd.x, velEnd.y - 12);
   }
